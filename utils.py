@@ -29,7 +29,7 @@ def convert_y(y, y_map):
         return(y_map.transform(y))
 
 
-def load_data(valid_pct=0.1):
+def load_data(test_mode=False, valid_pct=0.1):
     """loads the data into a structure"""
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
@@ -37,23 +37,27 @@ def load_data(valid_pct=0.1):
         dtype=[('Id', 'i8'), ('Category', 'S5')])
 
     # get data into numpy matrices
-    X_train_output = []
-    for i in range(len(X_train)):
+    X_train_output, y_train_output, X_test_output = [], [], []
+
+    if test_mode:
+        n_samples = 500
+    else:
+        n_samples = len(X_train)
+
+    for i in range(n_samples):
        X_train_output.append(X_train[i, 1])
     X_train = np.vstack(X_train_output)
 
-    X_test_output = []
+    for i in range(n_samples):
+        y_train_output.append(np.array(y_train[i][1]).astype(np.str))
+    y_train = np.hstack(y_train_output)
+
     for i in range(len(X_test)):
        X_test_output.append(X_test[i, 1])
     X_test = np.vstack(X_test_output)
 
-    y_train_output = []
-    for i in range(len(y_train)):
-        y_train_output.append(np.array(y_train[i][1]).astype(np.str))
-    y_train = np.hstack(y_train_output)
-
     # make validation set
-    n_valid = int(np.floor(valid_pct * len(X_train)))
+    n_valid = int(np.floor(valid_pct * n_samples))
 
     X_valid = X_train[:n_valid, :]
     X_train = X_train[n_valid:, :]
