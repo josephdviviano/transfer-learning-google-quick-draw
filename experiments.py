@@ -2,6 +2,8 @@
 holds different experiment functions (import and run these in train.py)
 """
 
+from models import SVM
+from sklearn.metrics import accuracy_score
 
 def experiment01():
     """imagenet"""
@@ -24,7 +26,20 @@ def experiment04():
 
 
 def experiment05(data):
-    """Base line: SVM (without Kernel)"""
-    return(SVM(data))
+    """baseline: SVM (without Kernel)"""
+
+    X_train = data['X']['train']
+    y_train = data['y']['train']
+
+    model = SVM(data) # returns a model ready to train
+
+    model.fit(data['X']['train'], data['y']['train']) # fit the training data
+    y_valid_pred = model.predict(data['X']['valid'])  # validation scores
+    y_test_pred = model.predict(data['X']['test'])    # test scores
+
+    logger.info('valid accuracy: {}'.format(y_valid_pred, data['y']['valid']))
+    import IPython; IPython.embed()
+
+    return(y_test_pred, model)
 
 

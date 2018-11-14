@@ -3,16 +3,39 @@ holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
 
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import RandomizedSearchCV
 
+# global settings for all cross-validation runs
+SETTINGS = {
+    'n_cv': 100,
+    'n_inner': 3,
+    'folds': 10
+}
 
 def SVM(data):
-    """ Base line: Linear classifier (without kernel)"""
-    svclassifier = SVC(kernel='linear')
-    svclassifier.fit(data['X']['train'], data['y']['train'])
+    """ baseline: linear classifier (without kernel)"""
+    # hyperparameters to search for randomized cross validation
+    settings = {
+        'clf__tol': stats.uniform(10e-5, 10e-1),
+        'clf__C': stats.uniform(10e-3, 1)
+    }
 
-    y_pred = svclassifier.predict(data['X']['valid'])
+    # model we will train in our pipeline
+    clf = SVC(kernel='linear', max_iter=100)
 
-    return(y_pred)
+    # pipeline runs preprocessing and model during every CV loop
+    pipe = Pipeline([
+        ('pre', StandardScaler()),
+        ('clf', clf),
+    ])
+
+    # this will learn our best parameters for the final model
+    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=2,
+        n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
+    )
+
+    return(model)
 
 
 def logistic_regression(data):

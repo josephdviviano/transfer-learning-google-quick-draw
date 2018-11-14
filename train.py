@@ -2,7 +2,7 @@
 """
 imports a set of experiments from experiments.py, runs them, and write results
 """
-from experiments import experiment01
+import experiments as exp
 from utils import load_data, show_example, get_y_map, convert_y
 import logging
 
@@ -32,12 +32,14 @@ def main():
     data['y']['train'] = convert_y(data['y']['train'], y_map)
     data['y']['valid'] = convert_y(data['y']['valid'], y_map)
 
+    predictions, model = exp.experiment05(data) # svm
 
-    # results = experiment02
+    import IPython; IPython.embed()
     # write results
 
 
 if __name__ == "__main__":
     main()
+
 
 
