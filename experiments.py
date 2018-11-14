@@ -19,3 +19,7 @@ def experiment04():
     """cnn and random forest ensemble"""
     pass
 
+def experiment05(data):
+    """Base line: SVM (without Kernel)"""
+    return SVM(data)
+
