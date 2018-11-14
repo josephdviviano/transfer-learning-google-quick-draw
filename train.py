@@ -2,7 +2,7 @@
 """
 imports a set of experiments from experiments.py, runs them, and write results
 """
-from utils import load_data, show_example, get_y_map, convert_y
+from utils import load_data, show_example, get_y_map, convert_y, write_results
 import argparse
 import experiments as exp
 import logging
@@ -32,10 +32,12 @@ def main(test_mode=False):
     data['y']['train'] = convert_y(data['y']['train'], y_map)
     data['y']['valid'] = convert_y(data['y']['valid'], y_map)
 
-    predictions, model = exp.experiment05(data) # svm
+    # train model and obtain predictions
+    predictions, model = exp.svm_baseline(data)
 
-    import IPython; IPython.embed()
     # write results
+    y_test = convert_y(predictions['test'], y_map)
+    write_results('results/svm_baseline.csv', y_test)
 
 
 if __name__ == "__main__":

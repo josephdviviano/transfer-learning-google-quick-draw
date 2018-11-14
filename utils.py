@@ -33,6 +33,14 @@ def convert_y(y, y_map):
         return(y_map.transform(y))
 
 
+def write_results(output, y):
+    """writes the vector y (in string form) to a file that kaggle accepts"""
+
+    with open(output, 'w') as f:
+        for i, val in enumerate(y):
+            f.write('{},{}\n'.format(i, val))
+
+
 def load_data(test_mode=False, valid_pct=0.1):
     """loads the data into a structure"""
     X_train = np.load('data/train_images.npy', encoding='latin1')

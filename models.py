@@ -1,22 +1,47 @@
 """
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
-import os
 from scipy import stats
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from torch.autograd import Variable
+from torch.optim import lr_scheduler
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms, datasets, models
 import logging
+import os
+import torch
+import torch.nn.functional as func
+import torchvision
+
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
+
+# stores downloaded models
+CACHEDIR = os.path.expanduser(os.path.join('~', '.torch'))
 
 # global settings for all cross-validation runs
 SETTINGS = {
     'n_cv': 100,
     'n_inner': 3,
-    'folds': 10
 }
+
+
+def resnet50():
+    if not exists(cache_dir):
+        makedirs(cache_dir)
+
+    models_dir = cache_dir + '/' + 'models/'
+    if not exists(models_dir):
+        makedirs(models_dir)
+
+    model_name = 'resnet50-19c8e357.pth'
+    src = '../input/pretrained-pytorch-models/' + model_name;
+    dest = models_dir + model_name
+    copyfile(src, dest)
+
 
 def SVM(data):
     """ baseline: linear classifier (without kernel)"""
