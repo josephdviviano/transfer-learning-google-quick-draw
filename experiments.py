@@ -2,9 +2,13 @@
 holds different experiment functions (import and run these in train.py)
 """
 
+import os
+import logging
 from models import SVM
 from scipy import stats
 from sklearn.metrics import accuracy_score
+
+LOGGER = logging.getLogger(os.path.basename(__file__))
 
 def experiment01():
     """imagenet"""
@@ -38,7 +42,7 @@ def experiment05(data):
     y_valid_pred = model.predict(data['X']['valid'])  # validation scores
     y_test_pred = model.predict(data['X']['test'])    # test scores
 
-    logger.info('valid accuracy: {}'.format(y_valid_pred, data['y']['valid']))
+    LOGGER.info('valid accuracy: {}'.format(y_valid_pred, data['y']['valid']))
     import IPython; IPython.embed()
 
     return(y_test_pred, model)

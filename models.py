@@ -1,11 +1,15 @@
 """
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
+import os
 from scipy import stats
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+import logging
+
+LOGGER = logging.getLogger(os.path.basename(__file__))
 
 # global settings for all cross-validation runs
 SETTINGS = {

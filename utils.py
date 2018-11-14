@@ -1,9 +1,13 @@
 """
 helper functions
 """
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+import logging
+
+LOGGER = logging.getLogger(os.path.basename(__file__))
 
 def show_example(image):
     """reshapes image to 100x100, plots)"""
@@ -40,6 +44,7 @@ def load_data(test_mode=False, valid_pct=0.1):
     X_train_output, y_train_output, X_test_output = [], [], []
 
     if test_mode:
+        LOGGER.info('running in test mode, n=500')
         n_samples = 500
     else:
         n_samples = len(X_train)
@@ -68,6 +73,9 @@ def load_data(test_mode=False, valid_pct=0.1):
     data = {'X': {'train': X_train, 'valid': X_valid, 'test': X_test},
             'y': {'train': y_train, 'valid': y_valid}
     }
+
+    LOGGER.debug('n TRAIN = {}, n VALID = {}, n TEST = {}'.format(
+        X_train.shape[0], X_valid.shape[0], X_test.shape[0]))
 
     return(data)
 
