@@ -3,6 +3,7 @@ holds different experiment functions (import and run these in train.py)
 """
 
 from models import SVM
+from scipy import stats
 from sklearn.metrics import accuracy_score
 
 def experiment01():

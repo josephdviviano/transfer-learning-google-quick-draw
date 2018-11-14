@@ -1,10 +1,11 @@
 """
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
-
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
+from scipy import stats
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
 # global settings for all cross-validation runs
 SETTINGS = {
