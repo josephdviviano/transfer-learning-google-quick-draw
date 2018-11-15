@@ -21,7 +21,7 @@ def kfold_train_loop(data, model):
     selection is expected to be performed inside the submitted model as part
     of the pipeline.
     """
-    x_train = data['X']['train']
+    X_train = data['X']['train']
     y_train = data['y']['train']
 
     kf = StratifiedKFold(n_splits=SETTINGS['folds'], shuffle=True)
@@ -29,7 +29,7 @@ def kfold_train_loop(data, model):
     best_model_acc = -1
     last_time = time.time()
 
-    for i, (train_idx, test_idx) in enumerate(kf.split(x_train, y_train)):
+    for i, (train_idx, test_idx) in enumerate(kf.split(X_train, y_train)):
 
         this_time = time.time()
         LOGGER.info("fold {}/{}, {:.2f} sec elapsed".format(
