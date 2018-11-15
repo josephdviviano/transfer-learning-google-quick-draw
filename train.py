@@ -32,12 +32,15 @@ def main(test_mode=False):
     data['y']['train'] = convert_y(data['y']['train'], y_map)
     data['y']['valid'] = convert_y(data['y']['valid'], y_map)
 
-    # train model and obtain predictions
-    predictions, model = exp.svm_baseline(data)
+    # run experiments
+    lr_pred, lr_model = exp.lr_baseline(data)
+    lr_y_test = convert_y(lr_pred['test'], y_map)
+    write_results('results/lr_baseline.csv', lr_y_test)
 
-    # write results
-    y_test = convert_y(predictions['test'], y_map)
-    write_results('results/svm_baseline.csv', y_test)
+    svm_pred, svm_model = exp.svm_baseline(data)
+    svm_y_test = convert_y(svm_pred['test'], y_map)
+    write_results('results/svm_baseline.csv', svm_y_test)
+
 
 
 if __name__ == "__main__":

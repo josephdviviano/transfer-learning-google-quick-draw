@@ -2,6 +2,7 @@
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
 from scipy import stats
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -15,7 +16,6 @@ import os
 import torch
 import torch.nn.functional as func
 import torchvision
-
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 
@@ -45,6 +45,7 @@ def resnet50():
 
 def SVM(data):
     """ baseline: linear classifier (without kernel)"""
+    LOGGER.debug('building SVM model')
     # hyperparameters to search for randomized cross validation
     settings = {
         'clf__tol': stats.uniform(10e-5, 10e-1),
@@ -69,7 +70,29 @@ def SVM(data):
 
 
 def logistic_regression(data):
-    """Base line: Linear classifier"""
-    pass
+    """baseline: linear classifier"""
+    LOGGER.debug('building logistic regression model')
+    # hyperparameters to search for randomized cross validation
+    settings = {
+        'clf__tol': stats.uniform(10e-5, 10e-1),
+        'clf__C': stats.uniform(10e-3, 1),
+        'clf__penalty': ['l1', 'l2']
+    }
+
+    # model we will train in our pipeline
+    clf = LogisticRegression(solver='saga', multi_class='ovr', max_iter=100)
+
+    # pipeline runs preprocessing and model during every CV loop
+    pipe = Pipeline([
+        ('pre', StandardScaler()),
+        ('clf', clf),
+    ])
+
+    # this will learn our best parameters for the final model
+    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=2,
+        n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
+    )
+
+    return(model)
 
 
