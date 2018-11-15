@@ -46,7 +46,8 @@ def kfold_train_loop(data, model):
         model.fit(X_fold_train, y_fold_train)
 
         this_model_predictions = model.predict(X_fold_test)
-        this_model_acc = accuracy_score(this_model_predictions, X_fold_test)
+
+        this_model_acc = accuracy_score(this_model_predictions, y_fold_test)
 
         if this_model_acc > best_model_acc:
             best_model = copy(model)
