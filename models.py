@@ -2,6 +2,7 @@
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
 from scipy import stats
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
@@ -24,10 +25,12 @@ CACHEDIR = os.path.expanduser(os.path.join('~', '.torch'))
 
 # global settings for all cross-validation runs
 SETTINGS = {
-    'n_cv': 100,
+    'n_cv': 25,
     'n_inner': 3,
 }
 
+# controls how chatty RandomizedCV is
+VERB_LEVEL = 0
 
 def resnet50():
     if not exists(cache_dir):
@@ -48,6 +51,7 @@ def SVM(data):
     LOGGER.debug('building SVM model')
     # hyperparameters to search for randomized cross validation
     settings = {
+        'dim__n_components': stats.randint(10, 1000),
         'clf__tol': stats.uniform(10e-5, 10e-1),
         'clf__C': stats.uniform(10e-3, 1)
     }
@@ -58,11 +62,12 @@ def SVM(data):
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
         ('pre', StandardScaler()),
+        ('dim', PCA()),
         ('clf', clf),
     ])
 
     # this will learn our best parameters for the final model
-    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=2,
+    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=VERB_LEVEL,
         n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
     )
 
@@ -74,6 +79,7 @@ def logistic_regression(data):
     LOGGER.debug('building logistic regression model')
     # hyperparameters to search for randomized cross validation
     settings = {
+        'dim__n_components': stats.randint(10, 1000),
         'clf__tol': stats.uniform(10e-5, 10e-1),
         'clf__C': stats.uniform(10e-3, 1),
         'clf__penalty': ['l1', 'l2']
@@ -85,11 +91,12 @@ def logistic_regression(data):
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
         ('pre', StandardScaler()),
+        ('dim', PCA()),
         ('clf', clf),
     ])
 
     # this will learn our best parameters for the final model
-    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=2,
+    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=VERB_LEVEL,
         n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
     )
 
