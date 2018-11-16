@@ -1,1 +1,4 @@
-initializing resnet with fine_tuning=False
+initializing resnet with fine_tuning=True
+[1/100] Loss: 3.4648 Acc: 0.1053
+[2/100] Loss: 2.1686 Acc: 0.4104
+[3/100] Loss: 1.5556 Acc: 0.5627

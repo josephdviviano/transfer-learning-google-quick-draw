@@ -102,8 +102,8 @@ def inception_net(data):
 
 def resnet(data):
     """inception net"""
-    model, transform, optimizer = models.resnet(fine_tune=False)
-    n_train = data['X']['train'].shape[0]
+    model, transform, optimizer = models.resnet(fine_tune=True)
+    n_train = float(data['X']['train'].shape[0])
     train, valid, test = make_torch_loaders(data)
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -120,7 +120,7 @@ def resnet(data):
         model.train(True)  # Set model to training mode
 
         running_loss = 0.0
-        running_corrects = 0
+        running_corrects = 0.0
 
         # minibatches
         for batch_idx, (X_train, y_train) in enumerate(train):
@@ -135,7 +135,6 @@ def resnet(data):
                 X_train_proc[i, 1, :, :] = img
                 X_train_proc[i, 2, :, :] = img
 
-            import IPython; IPython.embed()
             if CUDA:
                 X_train_proc, y_train = X_train_proc.cuda(), y_train.cuda()
 
@@ -143,15 +142,16 @@ def resnet(data):
 
             # do a pass
             outputs = model.forward(X_train_proc)
-            print(outputs)
             _, preds = torch.max(outputs.data, 1)
             loss = criterion(outputs, y_train)
             loss.backward()
             optimizer.step()
 
             # keep the score
-            running_loss += loss.data[0]
-            running_corrects += torch.sum(preds == y_train.data)
+            n_correct = torch.sum(preds == y_train.data)
+            running_loss += loss.item()
+            running_corrects += n_correct
+            LOGGER.debug('batch correct = {}'.format(n_correct))
 
         # error analysis
         LOGGER.debug('last outputs:\n{}'.format(outputs))
@@ -160,7 +160,8 @@ def resnet(data):
 
         #
         epoch_loss = running_loss / (batch_idx+1)
-        epoch_acc = running_corrects / n_train
+        epoch_acc = running_corrects.cpu().data.numpy() / n_train
+        LOGGER.debug('epoch correct: {}/{}'.format(running_corrects, n_train))
         epoch_losses.append(epoch_loss)
         epoch_accs.append(epoch_acc)
 
