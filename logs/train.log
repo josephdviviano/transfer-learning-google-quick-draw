@@ -1,5 +1,1 @@
-n TRAIN = 9000, n VALID = 1000, n TEST = 10000
 initializing resnet with fine_tuning=False
-Params to learn:
-	fc.weight
-	fc.bias

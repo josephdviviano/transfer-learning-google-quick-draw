@@ -127,11 +127,15 @@ def resnet(data):
 
             optimizer.zero_grad()
 
-            # makes inputs correct dimension for convnet (monochrome)
-            X_train_proc = torch.zeros([X_train.shape[0], 1, 224, 224])
+            # makes inputs correct dimension for convnet (monochrome -> rgb)
+            X_train_proc = torch.zeros([X_train.shape[0], 3, 224, 224])
             for i in range(X_train.shape[0]):
-                X_train_proc[i, 0, :, :] = transform(X_train[i, :, :].unsqueeze(0))
+                img = transform(X_train[i, :, :].unsqueeze(0))
+                X_train_proc[i, 0, :, :] = img
+                X_train_proc[i, 1, :, :] = img
+                X_train_proc[i, 2, :, :] = img
 
+            import IPython; IPython.embed()
             if CUDA:
                 X_train_proc, y_train = X_train_proc.cuda(), y_train.cuda()
 

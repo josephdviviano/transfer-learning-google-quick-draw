@@ -2,7 +2,6 @@
 helper functions
 """
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import MinMaxScaler
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -124,10 +123,10 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
     X_test  = np.swapaxes(X_test, 0, 2)
 
     # scale images to be [0 1]
-    scaler = MinMaxScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
+    train_min = np.min(X_train)
+    train_max = np.max(X_train)
+    X_train = (X_train - train_min) / (train_max - train_min)
+    X_test  = (X_test  - train_min) / (train_max - train_min)
 
     # make validation set
     n_valid = int(np.floor(valid_pct * n_samples))

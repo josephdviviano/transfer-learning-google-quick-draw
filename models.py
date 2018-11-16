@@ -50,9 +50,11 @@ def inception_v3():
         transforms.ToPILImage(),
         transforms.Resize(224),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
+
 
     return(model, transform)
 
@@ -75,6 +77,7 @@ def resnet(fine_tune=True):
         transforms.ToPILImage(),
         transforms.Resize(224),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
