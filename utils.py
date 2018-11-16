@@ -1,11 +1,12 @@
 """
 helper functions
 """
-import os
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import MinMaxScaler
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
-import logging
+import os
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
@@ -121,6 +122,12 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
     # make X.shape =  n_samples, x, y
     X_train = np.swapaxes(X_train, 0, 2)
     X_test  = np.swapaxes(X_test, 0, 2)
+
+    # scale images to be [0 1]
+    scaler = MinMaxScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
 
     # make validation set
     n_valid = int(np.floor(valid_pct * n_samples))

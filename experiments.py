@@ -127,10 +127,10 @@ def resnet(data):
 
             optimizer.zero_grad()
 
-            # makes inputs correct dimension for convnet
-            X_train_proc = torch.zeros([X_train.shape[0], 3, 224, 224])
+            # makes inputs correct dimension for convnet (monochrome)
+            X_train_proc = torch.zeros([X_train.shape[0], 1, 224, 224])
             for i in range(X_train.shape[0]):
-                X_train_proc[i, :, :, :] = transform(X_train[i, :, :].view(-1, 1, 1))
+                X_train_proc[i, 0, :, :] = transform(X_train[i, :, :].unsqueeze(0))
 
             if CUDA:
                 X_train_proc, y_train = X_train_proc.cuda(), y_train.cuda()
@@ -139,6 +139,7 @@ def resnet(data):
 
             # do a pass
             outputs = model.forward(X_train_proc)
+            print(outputs)
             _, preds = torch.max(outputs.data, 1)
             loss = criterion(outputs, y_train)
             loss.backward()
