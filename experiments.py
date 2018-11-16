@@ -2,6 +2,7 @@
 holds different experiment functions (import and run these in train.py)
 """
 
+import matplotlib.pyplot as plt
 from copy import copy
 from scipy import stats
 from sklearn.metrics import accuracy_score
@@ -15,7 +16,7 @@ import time
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
-SETTINGS = {'folds': 5, 'batch_size': 50}
+SETTINGS = {'folds': 5, 'batch_size': 128}
 CUDA = torch.cuda.is_available()
 
 def make_torch_loaders(data):
@@ -30,7 +31,7 @@ def make_torch_loaders(data):
         torch.FloatTensor(data['X']['test']))
 
     loader_opts = {'batch_size': SETTINGS['batch_size'],
-        'shuffle': True, 'num_workers': 2}
+        'shuffle': True, 'num_workers': 0}
 
     train = DataLoader(train, **loader_opts)
     valid = DataLoader(valid, **loader_opts)
@@ -101,16 +102,19 @@ def inception_net(data):
 
 def resnet(data):
     """inception net"""
-    model, transform, optimizer = models.resnet()
+    model, transform, optimizer = models.resnet(fine_tune=False)
     n_train = data['X']['train'].shape[0]
     train, valid, test = make_torch_loaders(data)
     criterion = torch.nn.CrossEntropyLoss()
+
+    epoch_losses = []
+    epoch_accs = []
 
     if CUDA:
         model = model.cuda()
 
     # epochs
-    for ep in range(10):
+    for ep in range(100):
 
         #scheduler.step()
         model.train(True)  # Set model to training mode
@@ -124,7 +128,7 @@ def resnet(data):
             optimizer.zero_grad()
 
             # makes inputs correct dimension for convnet
-            X_train_proc = torch.zeros([SETTINGS['batch_size'], 3, 224, 224])
+            X_train_proc = torch.zeros([X_train.shape[0], 3, 224, 224])
             for i in range(X_train.shape[0]):
                 X_train_proc[i, :, :, :] = transform(X_train[i, :, :].view(-1, 1, 1))
 
@@ -144,11 +148,25 @@ def resnet(data):
             running_loss += loss.data[0]
             running_corrects += torch.sum(preds == y_train.data)
 
+        # error analysis
+        LOGGER.debug('last outputs:\n{}'.format(outputs))
+        LOGGER.debug('last predictions:\n{}'.format(preds))
+        LOGGER.debug('last reality:\n{}'.format(y_train.data))
+
         #
         epoch_loss = running_loss / (batch_idx+1)
         epoch_acc = running_corrects / n_train
-        logger.info('[{}/10] Loss: {:.4f} Acc: {:.4f}'.format(
+        epoch_losses.append(epoch_loss)
+        epoch_accs.append(epoch_acc)
+
+        LOGGER.info('[{}/100] Loss: {:.4f} Acc: {:.4f}'.format(
                 ep+1, epoch_loss, epoch_acc))
+
+    plt.plot(epoch_loss)
+    plt.savefig('figures/resnet_loss.jpg')
+    plt.close()
+    plt.plot(epoch_acc)
+    plt.savefig('figures/resnet_acc.jpg')
 
 
 def lr_baseline(data):

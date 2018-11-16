@@ -1,0 +1,43 @@
+
+======== GPU REPORT ========
+
+==============NVSMI LOG==============
+
+Timestamp                           : Fri Nov 16 16:26:58 2018
+Driver Version                      : 384.145
+
+Attached GPUs                       : 1
+GPU 00000000:8A:00.0
+    Accounting Mode                 : Enabled
+    Accounting Mode Buffer Size     : 1920
+    Accounted Processes
+        Process ID                  : 31707
+            GPU Utilization         : 0 %
+            Memory Utilization      : 0 %
+            Max memory usage        : 519 MiB
+            Time                    : 0 ms
+            Is Running              : 1
+        Process ID                  : 1330
+            GPU Utilization         : 0 %
+            Memory Utilization      : 0 %
+            Max memory usage        : 0 MiB
+            Time                    : 0 ms
+            Is Running              : 1
+
+Fri Nov 16 16:26:58 2018       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.145                Driver Version: 384.145                   |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla P100-SXM2...  On   | 00000000:8A:00.0 Off |                    0 |
+| N/A   32C    P0    39W / 300W |    539MiB / 16276MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|    0     31707      C   -                                            529MiB |
++-----------------------------------------------------------------------------+

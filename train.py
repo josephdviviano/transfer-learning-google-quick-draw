@@ -12,7 +12,7 @@ import os
 
 # adds a simple logger
 logging.basicConfig(level=logging.INFO, format="[%(name)s:%(funcName)s:%(lineno)s] %(levelname)s: %(message)s")
-LOGGER = logging.getLogger(os.path.basename(__file__))
+LOGGER = logging.getLogger()
 
 category_map = {}
 

@@ -23,9 +23,6 @@ import torch.optim as optim
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 
-# stores downloaded models
-CACHEDIR = os.path.expanduser(os.path.join('~', '.torch'))
-
 # global settings for all cross-validation runs
 SETTINGS = {
     'n_cv': 25,
@@ -63,10 +60,15 @@ def inception_v3():
 def resnet(fine_tune=True):
     """initializes a resnet that can be fine-tuned"""
 
-    model = models.resnet18(pretrained=True) # resnet34,50,101,152
-    set_parameter_requires_grad(model, fine_tune)
-    model.fc = nn.Linear(512, 31)            # 31 classes for this problem
+    LOGGER.info('initializing resnet with fine_tuning={}'.format(fine_tune))
 
+    # upper layers are trainied if fine_tune=True
+    model = models.resnet18(pretrained=True) # resnet34,50,101,152
+    set_parameter_requires_grad(model, fine_tune) # sets weight plasticity
+
+    # this new layer is always trained
+    model.fc = nn.Linear(512, 31) # 31 classes
+    torch.nn.init.xavier_uniform_(list(model.fc.parameters())[0]) # init weights
 
     # convert to PIL image before transforms for compatibility
     transform = transforms.Compose([
@@ -91,16 +93,18 @@ def resnet(fine_tune=True):
     if fine_tune:
         for name, param in model.named_parameters():
             if param.requires_grad == True:
-                print("\t",name)
+                LOGGER.debug("\t{}".format(str(name)))
     else:
         params_to_update = []
         for name, param in model.named_parameters():
             if param.requires_grad == True:
                 params_to_update.append(param)
-                print("\t",name)
+                LOGGER.debug("\t{}".format(str(name)))
+
+    print(params_to_update)
 
     # observe that all parameters are being optimized
-    optimizer = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(params_to_update, lr=10e-4, momentum=0.9)
 
     return(model, transform, optimizer)
 
