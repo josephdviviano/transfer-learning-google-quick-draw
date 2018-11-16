@@ -104,6 +104,18 @@ def resnet(fine_tune=True):
 
     return(model, transform, optimizer)
 
+def k_nn(data):
+    """ TO COMPLETE """
+    LOGGER.debug('building K-NN model')
+    # hyperparameters to search for randomized cross validation
+    settings = {
+            'neighbors': stats.randint(1, 100)
+    }
+    
+    model = KNeighborsClassifier(n_neighbors=3, n_jobs=100)
+    
+    return model
+
 
 def SVM_nonlinear(data):
     """soft SVM with kernel"""
