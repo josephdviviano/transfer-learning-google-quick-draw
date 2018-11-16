@@ -105,7 +105,7 @@ def resnet(fine_tune=True):
     return(model, transform, optimizer)
 
 
-def SVM_kernelized(data):
+def SVM_nonlinear(data):
     """soft SVM with kernel"""
     LOGGER.debug('building SVM model')
     # hyperparameters to search for randomized cross validation
