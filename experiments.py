@@ -150,6 +150,13 @@ def resnet(data):
         logger.info('[{}/10] Loss: {:.4f} Acc: {:.4f}'.format(
                 ep+1, epoch_loss, epoch_acc))
 
+def svm_nonlinear(data):
+    """baseline: SVM (without Kernel)"""
+
+    model = models.SVM_nonlinear(data) # returns a model ready to train
+    results, best_model = kfold_train_loop(data, model)
+
+    return(results, best_model)
 
 def lr_baseline(data):
     """baseline: logistic regression"""
