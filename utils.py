@@ -43,7 +43,11 @@ def write_results(output, y):
 
 
 def load_data(test_mode=False, valid_pct=0.1):
-    """loads the data into a structure"""
+    """
+    loads the data into a structure for SCIKIT LEARN
+
+    data is stored as (n_subjects x n_pixels)
+    """
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
     y_train = np.genfromtxt('data/train_labels.csv', names=True, delimiter=',',
@@ -91,7 +95,12 @@ def load_data(test_mode=False, valid_pct=0.1):
 
 
 def load_data_2d(test_mode=False, valid_pct=0.1):
-    """loads the data into a structure"""
+    """
+    loads the data into a structure for PYTORCH
+
+    data is stored as (n_subjects x width x height)
+    all data is min-max normalized into a range of [0 1]
+    """
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
     y_train = np.genfromtxt('data/train_labels.csv', names=True, delimiter=',',
