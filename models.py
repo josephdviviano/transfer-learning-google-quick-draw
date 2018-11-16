@@ -105,6 +105,34 @@ def resnet(fine_tune=True):
     return(model, transform, optimizer)
 
 
+def SVM_kernelized(data):
+    """soft SVM with kernel"""
+    LOGGER.debug('building SVM model')
+    # hyperparameters to search for randomized cross validation
+    settings = {
+        'dim__n_components': stats.randint(10, 1000),
+        'clf__tol': stats.uniform(10e-5, 10e-1),
+        'clf__C': stats.uniform(10e-3, 1)
+    }
+
+    # model we will train in our pipeline
+    clf = SVC(gamma=0.001, max_iter=100)
+
+    # pipeline runs preprocessing and model during every CV loop
+    pipe = Pipeline([
+        ('pre', StandardScaler()),
+        ('dim', PCA(svd_solver='randomized')),
+        ('clf', clf),
+    ])
+
+    # this will learn our best parameters for the final model
+    model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=VERB_LEVEL,
+        n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
+    )
+
+    return(model)
+
+
 def SVM(data):
     """ baseline: linear classifier (without kernel)"""
     LOGGER.debug('building SVM model')
