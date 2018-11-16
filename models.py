@@ -12,11 +12,14 @@ from torch.autograd import Variable
 from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
+import torchvision.models as models
 import logging
 import os
 import torch
 import torch.nn.functional as func
 import torchvision
+import torch.nn as nn
+import torch.optim as optim
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 
@@ -32,18 +35,74 @@ SETTINGS = {
 # controls how chatty RandomizedCV is
 VERB_LEVEL = 0
 
-def resnet50():
-    if not exists(cache_dir):
-        makedirs(cache_dir)
 
-    models_dir = cache_dir + '/' + 'models/'
-    if not exists(models_dir):
-        makedirs(models_dir)
+def set_parameter_requires_grad(model, fine_tune):
+    """turns off gradient updates if we aren't fine tuning"""
+    if not fine_tune:
+        for param in model.parameters():
+            param.requires_grad = False
 
-    model_name = 'resnet50-19c8e357.pth'
-    src = '../input/pretrained-pytorch-models/' + model_name;
-    dest = models_dir + model_name
-    copyfile(src, dest)
+
+def inception_v3():
+
+    model = models.inception_v3(pretrained=True)
+    model.fc = nn.Linear(2048, 31) # 31 classes for this problem
+
+    # convert to PIL image before transforms for compatibility
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
+    return(model, transform)
+
+
+def resnet(fine_tune=True):
+    """initializes a resnet that can be fine-tuned"""
+
+    model = models.resnet18(pretrained=True) # resnet34,50,101,152
+    set_parameter_requires_grad(model, fine_tune)
+    model.fc = nn.Linear(512, 31)            # 31 classes for this problem
+
+
+    # convert to PIL image before transforms for compatibility
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
+    # send the model to GPU
+    #model = model.to(device)
+
+    # Gather the parameters to be optimized/updated in this run. If we are
+    # finetuning we will be updating all parameters. However, if we are
+    # doing feature extract method, we will only update the parameters
+    # that we have just initialized, i.e. the parameters with requires_grad
+    # is True.
+    params_to_update = model.parameters()
+
+    LOGGER.debug("Params to learn:")
+    if fine_tune:
+        for name, param in model.named_parameters():
+            if param.requires_grad == True:
+                print("\t",name)
+    else:
+        params_to_update = []
+        for name, param in model.named_parameters():
+            if param.requires_grad == True:
+                params_to_update.append(param)
+                print("\t",name)
+
+    # observe that all parameters are being optimized
+    optimizer = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+
+    return(model, transform, optimizer)
 
 
 def SVM(data):
@@ -62,7 +121,7 @@ def SVM(data):
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
         ('pre', StandardScaler()),
-        ('dim', PCA()),
+        ('dim', PCA(svd_solver='randomized')),
         ('clf', clf),
     ])
 
@@ -91,7 +150,7 @@ def logistic_regression(data):
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
         ('pre', StandardScaler()),
-        ('dim', PCA()),
+        ('dim', PCA(svd_solver='randomized')),
         ('clf', clf),
     ])
 
