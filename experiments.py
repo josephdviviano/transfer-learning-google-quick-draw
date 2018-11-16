@@ -13,6 +13,8 @@ import models
 import os
 import time
 import torch
+import cv2
+import numpy as np
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 SETTINGS = {'folds': 5, 'batch_size': 50}
@@ -149,6 +151,45 @@ def resnet(data):
         epoch_acc = running_corrects / n_train
         logger.info('[{}/10] Loss: {:.4f} Acc: {:.4f}'.format(
                 ep+1, epoch_loss, epoch_acc))
+
+        
+def image_to_feature_vector(image, size =(32,32)):
+    # resize the image to a fixed size, then flatten the image into
+    # a list of raw pixel intensities
+    return cv2.resize(image, size).flatten()
+
+def dataset_compression(data):
+    X_train = data['X']['train']
+    y_train = data['y']['train']
+    X_valid = data['X']['valid']
+    y_valid = data['y']['valid']
+    X_test = data['X']['test']
+    
+    X_train2 = np.zeros((9000, 1024))
+    X_valid2 = np.zeros((1000,1024))
+    X_test2 = np.zeros((10000, 1024))
+    for i in range (len(X_train)):
+        X_train2[i] = image_to_feature_vector(X_train[i])
+    
+    for j in range(len(X_valid)):
+        X_valid2[j] = image_to_feature_vector(X_valid[j])
+        
+    for k in range(len(X_test)):
+        X_test2[k] = image_to_feature_vector(X_test[k])
+    
+    data2 = {'X': {'train': X_train2, 'valid': X_valid2, 'test': X_test2},
+            'y': {'train': y_train, 'valid': y_valid}
+    }
+    return data2
+        
+
+def k_nn(data):
+    """ TO COMPLETE """"
+    model = models.k_nn(data) # returns a model ready to train
+    data2 = dataset_compression(data)
+    results, best_model = kfold_train_loop(data2,model)
+    
+    return(results, best_model)
 
 def svm_nonlinear(data):
     """baseline: SVM (without Kernel)"""
