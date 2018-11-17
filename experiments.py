@@ -205,7 +205,7 @@ def resnet(data):
 
         # validation performance
         valid_loss = total_loss / (batch_idx+1)
-        valid_acc = total_correct.cpu().data.numpy() / n_train
+        valid_acc = total_correct.cpu().data.numpy() / n_valid
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
         valid_accs.append(valid_acc)
