@@ -38,6 +38,7 @@ def write_results(output, y):
     """writes the vector y (in string form) to a file that kaggle accepts"""
 
     with open(output, 'w') as f:
+        f.write('Id,Category\n')
         for i, val in enumerate(y):
             f.write('{},{}\n'.format(i, val))
 
