@@ -2,6 +2,10 @@
 """
 imports a set of experiments from experiments.py, runs them, and write results
 """
+
+import matplotlib
+matplotlib.use('agg')
+
 import utils
 import argparse
 import experiments as exp
@@ -34,7 +38,11 @@ def main(test_mode=False):
     data['y']['valid'] = utils.convert_y(data['y']['valid'], y_map)
 
     # run experiments
-    exp.resnet(data)
+    y_test = exp.resnet(data)
+    print(y_test)
+    y_test = utils.convert_y(y_test, y_map)
+    utils.write_results('results/resnet.csv', y_test)
+
     #lr_pred, lr_model = exp.lr_baseline(data)
     #lr_y_test = utils.convert_y(lr_pred['test'], y_map)
     #utils.write_results('results/lr_baseline.csv', lr_y_test)

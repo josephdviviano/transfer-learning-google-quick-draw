@@ -1,14 +1,19 @@
 """
 holds different experiment functions (import and run these in train.py)
 """
+import matplotlib
+matplotlib.use('agg')
 
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+
 from copy import copy
 from scipy import stats
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, TensorDataset
+import numpy as np
 import logging
 import models
 import os
@@ -16,7 +21,7 @@ import time
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
-SETTINGS = {'folds': 5, 'batch_size': 128}
+SETTINGS = {'folds': 5, 'batch_size': 128, 'epochs': 100}
 CUDA = torch.cuda.is_available()
 
 def make_torch_loaders(data):
@@ -30,12 +35,12 @@ def make_torch_loaders(data):
     test  = TensorDataset(
         torch.FloatTensor(data['X']['test']))
 
-    loader_opts = {'batch_size': SETTINGS['batch_size'],
-        'shuffle': True, 'num_workers': 0}
+    loader_opts = {'batch_size': SETTINGS['batch_size'], 'num_workers': 0}
 
-    train = DataLoader(train, **loader_opts)
-    valid = DataLoader(valid, **loader_opts)
-    test  = DataLoader(test,  **loader_opts)
+    # don't shuffle test set or our predictions will be wrong...
+    train = DataLoader(train, shuffle=True,  **loader_opts)
+    valid = DataLoader(valid, shuffle=True,  **loader_opts)
+    test  = DataLoader(test,  shuffle=False, **loader_opts)
 
     return(train, valid, test)
 
@@ -100,57 +105,65 @@ def inception_net(data):
     import IPython; IPython.embed()
 
 
+def make_X_proc(X, transform):
+    """
+    makes X (a minibatch) correct dimension for convnet (monochrome -> rgb)
+    """
+    X_proc = torch.zeros([X.shape[0], 3, 224, 224])
+
+    for i in range(X.shape[0]):
+        img = transform(X[i, :, :].unsqueeze(0))
+        X_proc[i, 0, :, :] = img
+        X_proc[i, 1, :, :] = img
+        X_proc[i, 2, :, :] = img
+
+    return(X_proc)
+
+
 def resnet(data):
     """inception net"""
     model, transform, optimizer = models.resnet(fine_tune=True)
     n_train = float(data['X']['train'].shape[0])
+    n_valid = float(data['X']['valid'].shape[0])
     train, valid, test = make_torch_loaders(data)
     criterion = torch.nn.CrossEntropyLoss()
 
-    epoch_losses = []
-    epoch_accs = []
+    train_losses, train_accs, valid_losses, valid_accs = [], [], [], []
 
     if CUDA:
         model = model.cuda()
 
     # epochs
-    for ep in range(100):
+    for ep in range(SETTINGS['epochs']):
 
+        # TRAIN
         #scheduler.step()
         model.train(True)  # Set model to training mode
-
-        running_loss = 0.0
-        running_corrects = 0.0
+        total_loss, total_correct = 0.0, 0.0
 
         # minibatches
         for batch_idx, (X_train, y_train) in enumerate(train):
 
             optimizer.zero_grad()
 
-            # makes inputs correct dimension for convnet (monochrome -> rgb)
-            X_train_proc = torch.zeros([X_train.shape[0], 3, 224, 224])
-            for i in range(X_train.shape[0]):
-                img = transform(X_train[i, :, :].unsqueeze(0))
-                X_train_proc[i, 0, :, :] = img
-                X_train_proc[i, 1, :, :] = img
-                X_train_proc[i, 2, :, :] = img
+            X_proc = make_X_proc(X_train, transform)
 
             if CUDA:
-                X_train_proc, y_train = X_train_proc.cuda(), y_train.cuda()
+                X_proc, y_train = X_proc.cuda(), y_train.cuda()
 
-            X_train_proc, y_train = Variable(X_train_proc), Variable(y_train)
+            X_proc, y_train = Variable(X_proc), Variable(y_train)
 
-            # do a pass
-            outputs = model.forward(X_train_proc)
+            # do a forward-backward pass
+            outputs = model.forward(X_proc)
             _, preds = torch.max(outputs.data, 1)
             loss = criterion(outputs, y_train)
             loss.backward()
             optimizer.step()
 
-            # keep the score
+            # TRAIN: keep score
             n_correct = torch.sum(preds == y_train.data)
-            running_loss += loss.item()
-            running_corrects += n_correct
+            total_loss += loss.item()
+            total_correct += n_correct
             LOGGER.debug('batch correct = {}'.format(n_correct))
 
         # error analysis
@@ -158,21 +171,75 @@ def resnet(data):
         LOGGER.debug('last predictions:\n{}'.format(preds))
         LOGGER.debug('last reality:\n{}'.format(y_train.data))
 
-        #
-        epoch_loss = running_loss / (batch_idx+1)
-        epoch_acc = running_corrects.cpu().data.numpy() / n_train
-        LOGGER.debug('epoch correct: {}/{}'.format(running_corrects, n_train))
-        epoch_losses.append(epoch_loss)
-        epoch_accs.append(epoch_acc)
+        # training performance
+        train_loss = total_loss / (batch_idx+1)
+        train_acc = total_correct.cpu().data.numpy() / n_train
+        LOGGER.debug('epoch correct: {}/{}'.format(total_correct, n_train))
+        train_losses.append(train_loss)
+        train_accs.append(train_acc)
 
-        LOGGER.info('[{}/100] Loss: {:.4f} Acc: {:.4f}'.format(
-                ep+1, epoch_loss, epoch_acc))
+        # VALID
+        model.eval()
+        total_loss, total_correct = 0.0, 0.0
 
-    plt.plot(epoch_loss)
+        for batch_idx, (X_valid, y_valid) in enumerate(valid):
+
+            # data management
+            X_proc = make_X_proc(X_valid, transform)
+
+            if CUDA:
+                X_proc, y_valid = X_proc.cuda(), y_valid.cuda()
+
+            X_proc, y_valid = Variable(X_proc), Variable(y_valid)
+
+            # make predictions
+            outputs = model.forward(X_proc)
+            _, preds = torch.max(outputs.data, 1)
+            loss = criterion(outputs, y_valid)
+
+            # VALID: keep score
+            n_correct = torch.sum(preds == y_valid.data)
+            total_loss += loss.item()
+            total_correct += n_correct
+            LOGGER.debug('VALID batch correct = {}'.format(n_correct))
+
+        # validation performance
+        valid_loss = total_loss / (batch_idx+1)
+        valid_acc = total_correct.cpu().data.numpy() / n_train
+        LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
+        valid_losses.append(valid_loss)
+        valid_accs.append(valid_acc)
+
+        LOGGER.info('[{}/100] loss={:.4f}/{:.4f}, acc={:.4f}/{:.4f}'.format(
+                ep+1, train_loss, valid_loss, train_acc, valid_acc))
+
+    # TEST: make predictions
+    test_predictions = []
+    for batch_idx, X_test in enumerate(test):
+
+        # data management
+        X_proc = make_X_proc(X_test[0], transform)
+
+        if CUDA:
+            X_proc = X_proc.cuda()
+
+        X_proc = Variable(X_proc)
+        outputs = model.forward(X_proc)
+        _, preds = torch.max(outputs.data, 1)
+        test_predictions.extend(preds.tolist())
+
+    test_predictions = np.array(test_predictions)
+
+    plt.plot(train_loss)
+    plt.plot(valid_loss)
     plt.savefig('figures/resnet_loss.jpg')
     plt.close()
-    plt.plot(epoch_acc)
+    plt.plot(train_acc)
+    plt.plot(valid_acc)
     plt.savefig('figures/resnet_acc.jpg')
+    plt.close()
+
+    return(test_predictions)
 
 
 def lr_baseline(data):
