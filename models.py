@@ -59,7 +59,7 @@ def inception_v3():
     return(model, transform)
 
 
-def resnet(fine_tune=True):
+def resnet(fine_tune=True, lr=10e-4, momentum=0.9, l2=0.01):
     """initializes a resnet that can be fine-tuned"""
 
     LOGGER.info('initializing resnet with fine_tuning={}'.format(fine_tune))
@@ -82,14 +82,9 @@ def resnet(fine_tune=True):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    # send the model to GPU
-    #model = model.to(device)
 
-    # Gather the parameters to be optimized/updated in this run. If we are
-    # finetuning we will be updating all parameters. However, if we are
-    # doing feature extract method, we will only update the parameters
-    # that we have just initialized, i.e. the parameters with requires_grad
-    # is True.
+    # if fine_dune is set to true, sets all parameters require_grad
+    # otherwise only the newly added layers (above) require_grad
     params_to_update = model.parameters()
 
     LOGGER.debug("Params to learn:")
@@ -104,10 +99,8 @@ def resnet(fine_tune=True):
                 params_to_update.append(param)
                 LOGGER.debug("\t{}".format(str(name)))
 
-    print(params_to_update)
-
     # observe that all parameters are being optimized
-    optimizer = optim.SGD(params_to_update, lr=10e-4, momentum=0.9)
+    optimizer = optim.SGD(params_to_update, lr=lr, momentum=momentum, weight_decay=l2)
 
     return(model, transform, optimizer)
 

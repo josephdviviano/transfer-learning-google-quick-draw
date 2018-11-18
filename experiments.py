@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, TensorDataset
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import numpy as np
 import logging
 import models
@@ -115,26 +116,29 @@ def make_X_proc(X, transform):
     return(X_proc)
 
 
-def resnet(data):
-    """inception net"""
-    model, transform, optimizer = models.resnet(fine_tune=True)
-    n_train = float(data['X']['train'].shape[0])
-    n_valid = float(data['X']['valid'].shape[0])
-    train, valid, test = make_torch_loaders(data)
+def pytorch_train_loop(model, transform, optimizer, train, valid):
+    """
+    Trains a submitted model with a given optimizer and scheduler.
+    """
     criterion = torch.nn.CrossEntropyLoss()
+    scheduler = ReduceLROnPlateau(optimizer, patience=10)
+
+    n_train = len(train.dataset)
+    n_valid = len(valid.dataset)
 
     train_losses, train_accs, valid_losses, valid_accs = [], [], [], []
 
     if CUDA:
         model = model.cuda()
 
-    best_valid_acc = 0
+    best_valid_loss = 10000 # big enough I think
+    valid_loss = 10000      #
 
     # epochs
     for ep in range(SETTINGS['epochs']):
 
         # TRAIN
-        #scheduler.step()
+        scheduler.step(valid_loss)
         model.train(True)  # Set model to training mode
         total_loss, total_correct = 0.0, 0.0
 
@@ -161,7 +165,6 @@ def resnet(data):
             n_correct = torch.sum(preds == y_train.data)
             total_loss += loss.item()
             total_correct += n_correct
-            LOGGER.debug('batch correct = {}'.format(n_correct))
 
         # error analysis
         LOGGER.debug('last outputs:\n{}'.format(outputs))
@@ -198,24 +201,20 @@ def resnet(data):
             n_correct = torch.sum(preds == y_valid.data)
             total_loss += loss.item()
             total_correct += n_correct
-            LOGGER.debug('VALID batch correct = {}'.format(n_correct))
 
         # validation performance
         valid_loss = total_loss / (batch_idx+1)
         valid_acc = total_correct.cpu().data.numpy() / n_valid
 
-        if valid_acc > best_valid_acc:
+        if valid_loss < best_valid_loss:
             best_epoch = ep
-            best_valid_acc = valid_acc
-            LOGGER.info('new best model found: {}'.format(valid_acc))
+            best_valid_loss = valid_loss
+            LOGGER.info('new best model found: loss={}'.format(valid_loss))
             best_model = model.state_dict()
 
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
         valid_accs.append(valid_acc.item())
-
-        LOGGER.debug('{} {}'.format(type(valid_losses), type(valid_accs)))
-        LOGGER.debug('{} {}'.format(type(valid_losses[0]), type(valid_accs[0])))
 
         LOGGER.info('[{}/100] loss={:.4f}/{:.4f}, acc={:.4f}/{:.4f}'.format(
                 ep+1, train_loss, valid_loss, train_acc, valid_acc))
@@ -225,7 +224,59 @@ def resnet(data):
     LOGGER.info('early stopping -- rewinding to epoch {}'.format(best_epoch))
     model.load_state_dict(best_model)
 
+    performance = {'train': {'accuracy': train_accs, 'loss': train_losses},
+                   'valid': {'accuracy': valid_accs, 'loss': valid_losses},
+                   'best_epoch': best_epoch
+    }
+
+    return(model, performance)
+
+
+def resnet(data):
+    """inception net"""
+
+    train, valid, test = make_torch_loaders(data)
+
+    # grid search
+    lrs = [10e-2, 10e-3, 10e-4]
+    momentums = [0.75, 0.9, 0.95]
+    l2s = [10e-2, 10e-3, 10e-5]
+    best_val = 1000 # i think this is large enough
+
+    for lr in lrs:
+        for momentum in momentums:
+            for l2 in lrs:
+
+                model, transform, optimizer = models.resnet(
+                    fine_tune=True, lr=lr, momentum=momentum, l2=l2)
+
+                this_model, this_performance = pytorch_train_loop(
+                    model, transform, optimizer, train, valid)
+
+                # keep the best model
+                best_epoch = this_performance['best_epoch']
+                this_loss = this_performance['valid']['loss'][best_epoch]
+
+                LOGGER.info('lr={}, momentum={}, l2={}, loss={:.4f}'.format(
+                    lr, momentum, l2, this_loss))
+
+                if this_loss < best_val:
+                    best_model = copy(this_model)
+                    best_performance = copy(this_performance)
+                    best_optimizer = copy(optimizer)
+
+    try:
+        LOGGER.info('best optimizer: {}'.format(best_optimizer.state_dict()['param_groups']))
+    except:
+        pass
+
+    # keep the best model across the grid search
+    model = copy(best_model)
+    performance = copy(best_performance)
+    optimizer = copy(best_optimizer)
+
     # TEST: make predictions
+    model.eval()
     test_predictions = []
     for batch_idx, X_test in enumerate(test):
 
@@ -242,19 +293,19 @@ def resnet(data):
 
     test_predictions = np.array(test_predictions)
 
-    plt.plot(np.random.uniform(np.arange(100)))
-    plt.savefig('figures/test.jpg')
-    plt.close()
+    #plt.plot(np.random.uniform(np.arange(100)))
+    #plt.savefig('figures/test.jpg')
+    #plt.close()
 
-    plt.plot(train_loss)
-    plt.plot(valid_loss)
-    plt.savefig('figures/resnet_loss.jpg')
-    plt.close()
+    #plt.plot(train_loss)
+    #plt.plot(valid_loss)
+    #plt.savefig('figures/resnet_loss.jpg')
+    #plt.close()
 
-    plt.plot(train_acc)
-    plt.plot(valid_acc)
-    plt.savefig('figures/resnet_acc.jpg')
-    plt.close()
+    #plt.plot(train_acc)
+    #plt.plot(valid_acc)
+    #plt.savefig('figures/resnet_acc.jpg')
+    #plt.close()
 
     return(test_predictions)
 
