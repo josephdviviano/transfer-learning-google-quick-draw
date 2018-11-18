@@ -17,7 +17,7 @@ import time
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
-SETTINGS = {'folds': 5, 'batch_size': 128, 'epochs': 100}
+SETTINGS = {'folds': 5, 'batch_size': 32, 'epochs': 100}
 CUDA = torch.cuda.is_available()
 
 def make_torch_loaders(data):
@@ -238,8 +238,8 @@ def resnet(data):
     train, valid, test = make_torch_loaders(data)
 
     # grid search
-    lrs = [10e-2, 10e-3, 10e-4]
-    momentums = [0.75, 0.9, 0.95]
+    lrs = [10e-1, 10e-2, 10e-3, 10e-4, 10e-5]
+    momentums = [0.6, 0.9, 0.95]
     l2s = [10e-2, 10e-3, 10e-5]
     best_val = 1000 # i think this is large enough
 
