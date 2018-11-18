@@ -1,12 +1,7 @@
 """
 holds different experiment functions (import and run these in train.py)
 """
-import matplotlib
-matplotlib.use('agg')
-
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-
 from copy import copy
 from scipy import stats
 from sklearn.metrics import accuracy_score
@@ -247,10 +242,15 @@ def resnet(data):
 
     test_predictions = np.array(test_predictions)
 
+    plt.plot(np.random.uniform(np.arange(100)))
+    plt.savefig('figures/test.jpg')
+    plt.close()
+
     plt.plot(train_loss)
     plt.plot(valid_loss)
     plt.savefig('figures/resnet_loss.jpg')
     plt.close()
+
     plt.plot(train_acc)
     plt.plot(valid_acc)
     plt.savefig('figures/resnet_acc.jpg')

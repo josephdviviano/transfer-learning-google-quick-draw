@@ -39,7 +39,6 @@ def main(test_mode=False):
 
     # run experiments
     y_test = exp.resnet(data)
-    print(y_test)
     y_test = utils.convert_y(y_test, y_map)
     utils.write_results('results/resnet.csv', y_test)
 

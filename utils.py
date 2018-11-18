@@ -52,7 +52,7 @@ def load_data(test_mode=False, valid_pct=0.1):
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
     y_train = np.genfromtxt('data/train_labels.csv', names=True, delimiter=',',
-        dtype=[('Id', 'i8'), ('Category', 'S5')])
+        dtype=[('Id', 'i8'), ('Category', 'S20')])
 
     # get data into numpy matrices
     X_train_output, y_train_output, X_test_output = [], [], []
@@ -105,7 +105,9 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
     y_train = np.genfromtxt('data/train_labels.csv', names=True, delimiter=',',
-        dtype=[('Id', 'i8'), ('Category', 'S5')])
+        dtype=[('Id', 'i8'), ('Category', 'S20')])
+
+    import IPython; IPython.embed()
 
     # get data into numpy matrices
     X_train_output, y_train_output, X_test_output = [], [], []
