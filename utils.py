@@ -107,8 +107,6 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
     y_train = np.genfromtxt('data/train_labels.csv', names=True, delimiter=',',
         dtype=[('Id', 'i8'), ('Category', 'S20')])
 
-    import IPython; IPython.embed()
-
     # get data into numpy matrices
     X_train_output, y_train_output, X_test_output = [], [], []
 
