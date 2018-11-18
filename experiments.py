@@ -133,6 +133,8 @@ def resnet(data):
     if CUDA:
         model = model.cuda()
 
+    best_valid_acc = 0
+
     # epochs
     for ep in range(SETTINGS['epochs']):
 
@@ -176,7 +178,7 @@ def resnet(data):
         train_acc = total_correct.cpu().data.numpy() / n_train
         LOGGER.debug('epoch correct: {}/{}'.format(total_correct, n_train))
         train_losses.append(train_loss)
-        train_accs.append(train_acc)
+        train_accs.append(train_acc.item())
 
         # VALID
         model.eval()
@@ -206,12 +208,27 @@ def resnet(data):
         # validation performance
         valid_loss = total_loss / (batch_idx+1)
         valid_acc = total_correct.cpu().data.numpy() / n_valid
+
+        if valid_acc > best_valid_acc:
+            best_epoch = ep
+            best_valid_acc = valid_acc
+            LOGGER.info('new best model found: {}'.format(valid_acc))
+            best_model = model.state_dict()
+
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
-        valid_accs.append(valid_acc)
+        valid_accs.append(valid_acc.item())
+
+        LOGGER.debug('{} {}'.format(type(valid_losses), type(valid_accs)))
+        LOGGER.debug('{} {}'.format(type(valid_losses[0]), type(valid_accs[0])))
 
         LOGGER.info('[{}/100] loss={:.4f}/{:.4f}, acc={:.4f}/{:.4f}'.format(
                 ep+1, train_loss, valid_loss, train_acc, valid_acc))
+
+
+    # early stopping: use best validation performance
+    LOGGER.info('early stopping -- rewinding to epoch {}'.format(best_epoch))
+    model.load_state_dict(best_model)
 
     # TEST: make predictions
     test_predictions = []
