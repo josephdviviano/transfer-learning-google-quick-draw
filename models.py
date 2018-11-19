@@ -64,12 +64,14 @@ def resnet(fine_tune=True, lr=10e-4, momentum=0.9, l2=0.01):
 
     LOGGER.info('initializing resnet with fine_tuning={}'.format(fine_tune))
 
-    # upper layers are trainied if fine_tune=True
-    model = models.resnet18(pretrained=True) # resnet34,50,101,152
-    set_parameter_requires_grad(model, fine_tune) # sets weight plasticity
+    model = models.resnet101(pretrained=True)     # resnet18,34,50,101,152
+
+    # upper layers are set to requires_grad if fine_tune is true
+    set_parameter_requires_grad(model, fine_tune)
 
     # this new layer is always trained
-    model.fc = nn.Linear(512, 31) # 31 classes
+    linear_in_features = model.fc.in_features
+    model.fc = nn.Linear(linear_in_features, 31) # 31 output classes
     torch.nn.init.xavier_uniform_(list(model.fc.parameters())[0]) # init weights
 
     # convert to PIL image before transforms for compatibility

@@ -17,7 +17,7 @@ import time
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
-SETTINGS = {'folds': 5, 'batch_size': 32, 'epochs': 100}
+SETTINGS = {'folds': 5, 'batch_size': 32, 'epochs': 100, 'patience': 25}
 CUDA = torch.cuda.is_available()
 
 def make_torch_loaders(data):
@@ -133,9 +133,12 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
 
     best_valid_loss = 10000 # big enough I think
     valid_loss = 10000      #
+    best_epoch = 0          # initial value for compatibility
 
     # epochs
     for ep in range(SETTINGS['epochs']):
+
+        t1 = time.time()
 
         # TRAIN
         scheduler.step(valid_loss)
@@ -206,22 +209,26 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
         valid_loss = total_loss / (batch_idx+1)
         valid_acc = total_correct.cpu().data.numpy() / n_valid
 
-        if valid_loss < best_valid_loss:
-            best_epoch = ep
-            best_valid_loss = valid_loss
-            LOGGER.info('new best model found: loss={}'.format(valid_loss))
-            best_model = model.state_dict()
+        # wait 1/2 patience to store the first best model
+        if ep+1 >= np.floor(SETTINGS['patience'] / 2):
+            if valid_loss < best_valid_loss:
+                best_epoch = ep
+                best_valid_loss = valid_loss
+                LOGGER.info('new best model found: loss={}'.format(valid_loss))
+                best_model = model.state_dict()
 
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
         valid_accs.append(valid_acc.item())
 
-        LOGGER.info('[{}/100] loss={:.4f}/{:.4f}, acc={:.4f}/{:.4f}'.format(
-                ep+1, train_loss, valid_loss, train_acc, valid_acc))
+        t2 = time.time()
+        time_elapsed = t2-t1
 
+        LOGGER.info('[{}/{}] {:.2f} sec: loss={:.4f}/{:.4f}, acc={:.4f}/{:.4f}'.format(
+                ep+1, SETTINGS['epochs'], time_elapsed, train_loss, valid_loss, train_acc, valid_acc))
 
-        if ep >= best_epoch + 15:
-            LOGGER.info('stopping training -- no performance increase since epoch {}'.format(best_epoch))
+        if ep >= best_epoch + SETTINGS['patience']:
+            LOGGER.info('impatient! no performance increase since epoch {}'.format(best_epoch))
             break
 
     # early stopping: use best validation performance
@@ -242,39 +249,40 @@ def resnet(data):
     train, valid, test = make_torch_loaders(data)
 
     # grid search
-    lrs = [10e-3, 10e-4, 10e-5]
-    momentums = [0.6, 0.9, 0.95]
-    l2s = [10e-3, 10e-4, 10e-5]
+    momentum = 0.9        # fixed
+    lrs = [10e-4, 10e-5]
+    l2s = [10e-4, 10e-6, 10e-8]
     best_val = 1000 # i think this is large enough
 
     for lr in lrs:
-        for momentum in momentums:
-            for l2 in lrs:
+        for l2 in l2s:
 
-                model, transform, optimizer = models.resnet(
-                    fine_tune=True, lr=lr, momentum=momentum, l2=l2)
+            t1 = time.time()
 
-                this_model, this_performance = pytorch_train_loop(
-                    model, transform, optimizer, train, valid)
+            model, transform, optimizer = models.resnet(
+                fine_tune=True, lr=lr, momentum=momentum, l2=l2)
 
-                # keep the best model
-                best_epoch = this_performance['best_epoch']
-                this_loss = this_performance['valid']['loss'][best_epoch]
+            this_model, this_performance = pytorch_train_loop(
+                model, transform, optimizer, train, valid)
 
-                LOGGER.info('lr={}, momentum={}, l2={}, loss={:.4f}'.format(
-                    lr, momentum, l2, this_loss))
+            # keep the best model
+            best_epoch = this_performance['best_epoch']
+            this_loss = this_performance['valid']['loss'][best_epoch]
 
-                if this_loss < best_val:
-                    best_model = copy(this_model)
-                    best_performance = copy(this_performance)
-                    best_optimizer = copy(optimizer)
+            t2 = time.time()
+            time_elapsed = t2-t1
 
-    try:
-        LOGGER.info('best optimizer: {}'.format(best_optimizer.state_dict()['param_groups']))
-    except:
-        pass
+            LOGGER.info('TEST DONE in {:.2f} sec: lr={}, momentum={}, l2={}, loss={:.4f}'.format(
+                time_elapsed, lr, momentum, l2, this_loss))
+
+            if this_loss < best_val:
+                LOGGER.info('^^^ NEW BEST MODEL CHOSEN ^^^')
+                best_model = copy(this_model)
+                best_performance = copy(this_performance)
+                best_optimizer = copy(optimizer)
 
     # keep the best model across the grid search
+    LOGGER.info('BEST OPTIMIZER: {}'.format(best_optimizer.state_dict()['param_groups']))
     model = copy(best_model)
     performance = copy(best_performance)
     optimizer = copy(best_optimizer)
