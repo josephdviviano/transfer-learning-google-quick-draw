@@ -220,6 +220,10 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
                 ep+1, train_loss, valid_loss, train_acc, valid_acc))
 
 
+        if ep >= best_epoch + 15:
+            LOGGER.info('stopping training -- no performance increase since epoch {}'.format(best_epoch))
+            break
+
     # early stopping: use best validation performance
     LOGGER.info('early stopping -- rewinding to epoch {}'.format(best_epoch))
     model.load_state_dict(best_model)
@@ -238,9 +242,9 @@ def resnet(data):
     train, valid, test = make_torch_loaders(data)
 
     # grid search
-    lrs = [10e-1, 10e-2, 10e-3, 10e-4, 10e-5]
+    lrs = [10e-3, 10e-4, 10e-5]
     momentums = [0.6, 0.9, 0.95]
-    l2s = [10e-2, 10e-3, 10e-5]
+    l2s = [10e-3, 10e-4, 10e-5]
     best_val = 1000 # i think this is large enough
 
     for lr in lrs:
