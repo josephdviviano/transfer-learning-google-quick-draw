@@ -1,12 +1,16 @@
 """
 helper functions
 """
+#%pylab inline
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import logging
 import torch
+import cv2
+from scipy import ndimage
+import argparse
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 
@@ -42,7 +46,7 @@ def write_results(output, y):
             f.write('{},{}\n'.format(i, val))
 
 
-def load_data(test_mode=False, valid_pct=0.1):
+def load_data(test_mode=False, valid_pct=0.1, cropping = False):
     """loads the data into a structure"""
     X_train = np.load('data/train_images.npy', encoding='latin1')
     X_test  = np.load('data/test_images.npy', encoding='latin1')
@@ -59,7 +63,10 @@ def load_data(test_mode=False, valid_pct=0.1):
         n_samples = len(X_train)
 
     for i in range(n_samples):
-       X_train_output.append(X_train[i, 1])
+        if cropping == True:
+            X_train_output.append(np.hstack(detect_edge_and_crop(X_train[i, 1].reshape(100, 100))))
+        else:
+            X_train_output.append(X_train[i, 1])
     X_train = np.vstack(X_train_output)
 
     for i in range(n_samples):
@@ -67,17 +74,23 @@ def load_data(test_mode=False, valid_pct=0.1):
     y_train = np.hstack(y_train_output)
 
     for i in range(len(X_test)):
-       X_test_output.append(X_test[i, 1])
+        if cropping == True:
+            X_test_output.append(np.hstack(detect_edge_and_crop(X_test[i, 1].reshape(100, 100))))
+        else:
+            X_test_output.append(X_test[i, 1])
     X_test = np.vstack(X_test_output)
 
     # make validation set
-    n_valid = int(np.floor(valid_pct * n_samples))
+    #n_valid = int(np.floor(valid_pct * n_samples))
+    n_valid = 50
 
     X_valid = X_train[:n_valid, :]
-    X_train = X_train[n_valid:, :]
+    #X_train = X_train[n_valid:, :]
+    X_train = X_train[n_valid:500, :]
     y_valid = y_train[:n_valid]
-    y_train = y_train[n_valid:]
-
+    #y_train = y_train[n_valid:]
+    y_train = y_train[n_valid:500]
+                      
     # data is accessed as data['X']['valid']
     data = {'X': {'train': X_train, 'valid': X_valid, 'test': X_test},
             'y': {'train': y_train, 'valid': y_valid}
@@ -139,5 +152,39 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
         X_train.shape[0], X_valid.shape[0], X_test.shape[0]))
 
     return(data)
+    
+def detect_edge_and_crop(image):
+    #Denoising image
+    image_denoised = ndimage.median_filter(image,4)
+            
+    img = np.array(image_denoised ,dtype=np.uint8)
+    nb_components, labels, stats, centroids = cv2.connectedComponentsWithStats(img) #connected components detected
+    sizes = stats[:, -1]
+            
+    max_label = 1
+    max_size = sizes[1]
+    for i in range(2, nb_components):
+        if sizes[i] > max_size:
+            max_label = i
+            max_size = sizes[i]
+        
+    img2 = np.zeros(labels.shape)
+    img2[labels == max_label] = 1
 
+    
+    #crop image
+    # find where the signature is and make a cropped region
+    points = np.argwhere(img2==1) # find where the black pixels are
+    points = np.fliplr(points) # store them in x,y coordinates instead of row,col indices
+    x, y, w, h = cv2.boundingRect(points) # create a rectangle around those points
+    crop = image[y:y+h, x:x+w] # create a cropped region of the gray image
 
+    # get the thresholded crop
+    retval, thresh_crop = cv2.threshold(crop, thresh=200, maxval=1, type=cv2.THRESH_BINARY)
+
+    
+    #Patch to get 40x40 pixels
+    resized_image = cv2.resize(thresh_crop, (40, 40)) 
+
+    
+    return resized_image
