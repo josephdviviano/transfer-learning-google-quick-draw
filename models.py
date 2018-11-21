@@ -1,24 +1,31 @@
 """
 holds our models (e.g., imagenet, cnns, etc, to be imported into experiments.py)
 """
+from imutils import paths
 from scipy import stats
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-import logging
-import os
-import torch.nn as nn
-import torch.optim as optim
-from imutils import paths
-import numpy as np
+from torch.autograd import Variable
+from torch.optim import lr_scheduler
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms, datasets, models
 import argparse
-import imutils
-import os
 import cv2
+import imutils
+import logging
+import numpy as np
+import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as func
+import torch.optim as optim
+import torchvision
+import torchvision.models as models
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
 
@@ -114,7 +121,7 @@ def k_nn():
         'clf__C': stats.uniform(10e-3, 1),
         'clf__n_neighbors': stats.randint(1,50)
     }
-    
+
     # model we will train in our pipeline
     clf = KNeighborsClassifier()
 
@@ -129,7 +136,7 @@ def k_nn():
     model = RandomizedSearchCV(pipe, settings, n_jobs=-1, verbose=VERB_LEVEL,
         n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
     )
-    
+
     return model
 
 

@@ -14,7 +14,6 @@ import logging
 import matplotlib.pyplot as plt
 import models
 import numpy as np
-import numpy as np
 import os
 import time
 import torch
@@ -23,7 +22,7 @@ LOGGER = logging.getLogger(os.path.basename(__file__))
 SETTINGS = {
     'folds': 5,
     'batch_size': 32,
-    'sigma': 0.2,
+    'sigma': 0.1,
     'epochs': 100,
     'patience': 20
 }
@@ -276,7 +275,7 @@ def resnet(data):
     # grid search
     momentum = 0.9        # fixed
     lrs = [10e-4]
-    l2s = [10e-4, 10e-5]
+    l2s = [10e-3, 10e-4]
     best_val = 0
 
     for lr in lrs:
