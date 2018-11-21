@@ -17,7 +17,14 @@ import time
 import torch
 
 LOGGER = logging.getLogger(os.path.basename(__file__))
-SETTINGS = {'folds': 5, 'batch_size': 32, 'epochs': 100, 'patience': 25}
+SETTINGS = {
+    'folds': 5,
+    'batch_size': 32,
+    'sigma': 0.5,
+    'epochs': 100,
+    'patience': 25
+}
+
 CUDA = torch.cuda.is_available()
 
 def make_torch_loaders(data):
@@ -101,14 +108,26 @@ def inception_net(data):
     import IPython; IPython.embed()
 
 
-def make_X_proc(X, transform):
+def make_X_proc(X, transform, sigma=1):
     """
     makes X (a minibatch) correct dimension for convnet (monochrome -> rgb)
     """
     X_proc = torch.zeros([X.shape[0], 3, 224, 224])
 
     for i in range(X.shape[0]):
-        img = transform(X[i, :, :].unsqueeze(0))
+        img = X[i, :, :]
+
+        # add gausssian noise to 50% of pixels, clamped at [0 1]
+        noise = torch.FloatTensor(np.maximum(
+            np.zeros(img.shape),
+            np.random.normal(0, scale=SETTINGS['sigma'], size=img.shape)
+            )
+        )
+        img = np.minimum(np.ones(img.shape).astype(np.float32), img + noise)
+
+        # apply torchvision transformations
+        img = transform(img.unsqueeze(0))
+
         X_proc[i, 0, :, :] = img
         X_proc[i, 1, :, :] = img
         X_proc[i, 2, :, :] = img
@@ -131,8 +150,10 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
     if CUDA:
         model = model.cuda()
 
-    best_valid_loss = 10000 # big enough I think
-    valid_loss = 10000      #
+
+    best_valid_acc = 0      # initial value for early stopping
+    valid_acc = 0           #
+    valid_loss = 10000      # initial value for learning rate scheduler
     best_epoch = 0          # initial value for compatibility
 
     # epochs
@@ -211,10 +232,11 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
 
         # wait 1/2 patience to store the first best model
         if ep+1 >= np.floor(SETTINGS['patience'] / 2):
-            if valid_loss < best_valid_loss:
+            if valid_acc > best_valid_acc:
                 best_epoch = ep
-                best_valid_loss = valid_loss
-                LOGGER.info('new best model found: loss={}'.format(valid_loss))
+                best_valid_acc = valid_acc
+                LOGGER.info('new best model found: acc={}, loss={}'.format(
+                    valid_acc, valid_loss))
                 best_model = model.state_dict()
 
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
@@ -252,7 +274,7 @@ def resnet(data):
     momentum = 0.9        # fixed
     lrs = [10e-4, 10e-5]
     l2s = [10e-4, 10e-6, 10e-8]
-    best_val = 1000 # i think this is large enough
+    best_val = 0
 
     for lr in lrs:
         for l2 in l2s:
@@ -267,15 +289,15 @@ def resnet(data):
 
             # keep the best model
             best_epoch = this_performance['best_epoch']
-            this_loss = this_performance['valid']['loss'][best_epoch]
+            this_acc = this_performance['valid']['accuracy'][best_epoch]
 
             t2 = time.time()
             time_elapsed = t2-t1
 
-            LOGGER.info('TEST DONE in {:.2f} sec: lr={}, momentum={}, l2={}, loss={:.4f}'.format(
-                time_elapsed, lr, momentum, l2, this_loss))
+            LOGGER.info('TEST DONE in {:.2f} sec: lr={}, momentum={}, l2={}, accuracy={:.4f}'.format(
+                time_elapsed, lr, momentum, l2, this_acc))
 
-            if this_loss < best_val:
+            if this_acc > best_val:
                 LOGGER.info('^^^ NEW BEST MODEL CHOSEN ^^^')
                 best_model = copy(this_model)
                 best_performance = copy(this_performance)
