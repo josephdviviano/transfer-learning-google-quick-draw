@@ -47,7 +47,7 @@ def write_results(output, y):
             f.write('{},{}\n'.format(i, val))
 
 
-def load_data(test_mode=False, valid_pct=0.1, cropping = False):
+def load_data(test_mode=False, valid_pct=0.1, cropping=False):
     """
     loads the data into a structure for SCIKIT LEARN. data is stored as
     (n_subjects x n_pixels). if cropping, then the data is denoised, segmented,
@@ -108,7 +108,7 @@ def load_data(test_mode=False, valid_pct=0.1, cropping = False):
 
 
 
-def load_data_2d(test_mode=False, valid_pct=0.1):
+def load_data_2d(test_mode=False, valid_pct=0.1, cropping=False):
     """
     loads the data into a structure for PYTORCH
 
@@ -129,19 +129,28 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
     else:
         n_samples = len(X_train)
 
+    # make (cropped or uncropped) TRAINING samples
     for i in range(n_samples):
-       X_train_output.append(X_train[i, 1].reshape(100, 100))
+       if cropping:
+           X_train_output.append(detect_edge_and_crop(X_train[i, 1].reshape(100, 100)))
+       else:
+           X_train_output.append(X_train[i, 1].reshape(100, 100))
     X_train = np.stack(X_train_output, axis=2)
 
+    # make (cropped or uncropped) TEST samples
+    for i in range(len(X_test)):
+       if cropping:
+           X_test_output.append(detect_edge_and_crop(X_test[i, 1].reshape(100, 100)))
+       else:
+           X_test_output.append(X_test[i, 1].reshape(100, 100))
+    X_test = np.stack(X_test_output, axis=2)
+
+    # grab the labels for TRAINING samples
     for i in range(n_samples):
         y_train_output.append(np.array(y_train[i][1]).astype(np.str))
     y_train = np.hstack(y_train_output)
 
-    for i in range(len(X_test)):
-       X_test_output.append(X_test[i, 1].reshape(100, 100))
-    X_test = np.stack(X_test_output, axis=2)
-
-    # make X.shape =  n_samples, x, y
+    # make X.shape = (n_samples, x, y)
     X_train = np.swapaxes(X_train, 0, 2)
     X_test  = np.swapaxes(X_test, 0, 2)
 
@@ -153,7 +162,6 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
 
     # make validation set
     n_valid = int(np.floor(valid_pct * n_samples))
-
     X_valid = X_train[:n_valid, :, :]
     X_train = X_train[n_valid:, :, :]
     y_valid = y_train[:n_valid]
@@ -168,6 +176,7 @@ def load_data_2d(test_mode=False, valid_pct=0.1):
         X_train.shape[0], X_valid.shape[0], X_test.shape[0]))
 
     return(data)
+
 
 def detect_edge_and_crop(image):
     #Denoising image
