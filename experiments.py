@@ -1,17 +1,20 @@
 """
 holds different experiment functions (import and run these in train.py)
 """
-import matplotlib.pyplot as plt
 from copy import copy
 from scipy import stats
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
+from sklearn.neighbors import KNeighborsClassifier
 from torch.autograd import Variable
-from torch.utils.data import DataLoader, TensorDataset
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import numpy as np
+from torch.utils.data import DataLoader, TensorDataset
+import cv2
 import logging
+import matplotlib.pyplot as plt
 import models
+import numpy as np
+import numpy as np
 import os
 import time
 import torch
@@ -343,6 +346,22 @@ def resnet(data):
     #plt.close()
 
     return(test_predictions)
+
+
+def k_nn(data):
+
+     model = models.k_nn() # returns a model ready to train
+     results, best_model = kfold_train_loop(data, model)
+     return(results, best_model)
+
+
+def svm_nonlinear(data):
+    """baseline: SVM (without Kernel)"""
+
+    model = models.SVM_nonlinear(data) # returns a model ready to train
+    results, best_model = kfold_train_loop(data, model)
+
+    return(results, best_model)
 
 
 def lr_baseline(data):
