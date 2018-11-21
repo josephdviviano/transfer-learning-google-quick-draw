@@ -20,9 +20,9 @@ LOGGER = logging.getLogger(os.path.basename(__file__))
 SETTINGS = {
     'folds': 5,
     'batch_size': 32,
-    'sigma': 0.5,
+    'sigma': 0.2,
     'epochs': 100,
-    'patience': 25
+    'patience': 20
 }
 
 CUDA = torch.cuda.is_available()
@@ -272,8 +272,8 @@ def resnet(data):
 
     # grid search
     momentum = 0.9        # fixed
-    lrs = [10e-4, 10e-5]
-    l2s = [10e-4, 10e-6, 10e-8]
+    lrs = [10e-4]
+    l2s = [10e-4, 10e-5]
     best_val = 0
 
     for lr in lrs:
@@ -299,6 +299,7 @@ def resnet(data):
 
             if this_acc > best_val:
                 LOGGER.info('^^^ NEW BEST MODEL CHOSEN ^^^')
+                best_val = this_acc
                 best_model = copy(this_model)
                 best_performance = copy(this_performance)
                 best_optimizer = copy(optimizer)
