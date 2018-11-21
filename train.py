@@ -13,6 +13,9 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys 
+
+
 
 # adds a simple logger
 logging.basicConfig(level=logging.INFO, format="[%(name)s:%(funcName)s:%(lineno)s] %(levelname)s: %(message)s")
@@ -29,19 +32,24 @@ def main(test_mode=False):
     log_hdl.setFormatter(logging.Formatter('%(message)s'))
     LOGGER.addHandler(log_hdl)
 
-    data = utils.load_data_2d(test_mode=test_mode, cropping=True)
-
+    data = utils.load_data(test_mode=test_mode, cropping=True)
+    #data = utils.load_data_2d(test_mode=test_mode)
+    
+    
     # way to map between string labels and int labels
     y_map = utils.get_y_map(data)
     data['y']['train'] = utils.convert_y(data['y']['train'], y_map)
     data['y']['valid'] = utils.convert_y(data['y']['valid'], y_map)
 
-    # run experiments
-    y_test = exp.resnet(data)
-    y_test = utils.convert_y(y_test, y_map)
-    utils.write_results('results/resnet.csv', y_test)
 
-    #data = utils.load_data(test_mode=test_mode)
+    
+    
+    # run experiments
+    #y_test = exp.resnet(data)
+    #print(y_test)
+    #y_test = utils.convert_y(y_test, y_map)
+    #utils.write_results('results/resnet.csv', y_test)
+
     #lr_pred, lr_model = exp.lr_baseline(data)
     #lr_y_test = utils.convert_y(lr_pred['test'], y_map)
     #utils.write_results('results/lr_baseline.csv', lr_y_test)
@@ -50,7 +58,13 @@ def main(test_mode=False):
     #svm_y_test = utils.convert_y(svm_pred['test'], y_map)
     #utils.write_results('results/svm_baseline.csv', svm_y_test)
 
-
+    #gbm_pred, gbm_model = exp.gbm_baseline(data)
+    #gbm_y_test = utils.convert_y(gbm_pred['test'], y_map)
+    #utils.write_results('results/gbm_baseline.csv', gbm_y_test)
+    
+    xgb_pred, gbm_model = exp.xgb_baseline(data)
+    xgb_y_test = utils.convert_y(xgb_pred['test'], y_map)
+    utils.write_results('results/xgb_baseline.csv', xgb_y_test)
 
 if __name__ == "__main__":
 
