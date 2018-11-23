@@ -23,8 +23,8 @@ SETTINGS = {
     'folds': 5,
     'batch_size': 32,
     'sigma': 0.1,
-    'epochs': 100,
-    'patience': 20
+    'epochs': 500,
+    'patience': 50
 }
 
 CUDA = torch.cuda.is_available()
@@ -240,6 +240,7 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
                 LOGGER.info('new best model found: acc={}, loss={}'.format(
                     valid_acc, valid_loss))
                 best_model = model.state_dict()
+                torch.save(best_model, '/tmp/vivianoj/resnet_{}.pt'.format(ep+1))
 
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
@@ -275,7 +276,7 @@ def resnet(data):
     # grid search
     momentum = 0.9        # fixed
     lrs = [10e-4]
-    l2s = [10e-3, 10e-4]
+    l2s = [10e-3]
     best_val = 0
 
     for lr in lrs:
