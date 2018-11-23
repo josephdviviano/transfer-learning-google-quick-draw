@@ -167,6 +167,8 @@ def load_data_2d(test_mode=False, valid_pct=0.1, cropping=False):
     y_valid = y_train[:n_valid]
     y_train = y_train[n_valid:]
 
+    LOGGER.info('using {} samples for validation'.format(str(n_valid)))
+
     # data is accessed as data['X']['valid']
     data = {'X': {'train': X_train, 'valid': X_valid, 'test': X_test},
             'y': {'train': y_train, 'valid': y_valid}

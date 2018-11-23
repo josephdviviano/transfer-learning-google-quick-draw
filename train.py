@@ -29,7 +29,7 @@ def main(test_mode=False):
     log_hdl.setFormatter(logging.Formatter('%(message)s'))
     LOGGER.addHandler(log_hdl)
 
-    data = utils.load_data_2d(test_mode=test_mode, cropping=False)
+    data = utils.load_data_2d(test_mode=test_mode, valid_pct=0.2, cropping=False)
 
     # way to map between string labels and int labels
     y_map = utils.get_y_map(data)
@@ -37,9 +37,11 @@ def main(test_mode=False):
     data['y']['valid'] = utils.convert_y(data['y']['valid'], y_map)
 
     # run experiments
-    y_test = exp.resnet(data)
+    y_test, model, performance, optimizer = exp.resnet(data)
     y_test = utils.convert_y(y_test, y_map)
     utils.write_results('results/resnet.csv', y_test)
+
+    import IPython; IPython.embed()
 
     #data = utils.load_data(test_mode=test_mode)
     #lr_pred, lr_model = exp.lr_baseline(data)

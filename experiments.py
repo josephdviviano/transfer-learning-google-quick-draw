@@ -23,8 +23,8 @@ SETTINGS = {
     'folds': 5,
     'batch_size': 32,
     'sigma': 0.1,
-    'epochs': 500,
-    'patience': 50
+    'epochs': 100,
+    'patience': 25
 }
 
 CUDA = torch.cuda.is_available()
@@ -208,6 +208,9 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
         model.eval()
         total_loss, total_correct = 0.0, 0.0
 
+        all_preds = np.array([])
+        all_reals = np.array([])
+
         for batch_idx, (X_valid, y_valid) in enumerate(valid):
 
             # data management
@@ -228,6 +231,11 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
             total_loss += loss.item()
             total_correct += n_correct
 
+            # for confusion matrix
+            all_preds = np.concatenate((all_preds,   preds.cpu().numpy())) if all_preds.size else   preds.cpu().numpy()
+            all_reals = np.concatenate((all_reals, y_valid.cpu().numpy())) if all_reals.size else y_valid.cpu().numpy()
+
+
         # validation performance
         valid_loss = total_loss / (batch_idx+1)
         valid_acc = total_correct.cpu().data.numpy() / n_valid
@@ -240,7 +248,9 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
                 LOGGER.info('new best model found: acc={}, loss={}'.format(
                     valid_acc, valid_loss))
                 best_model = model.state_dict()
-                torch.save(best_model, '/tmp/vivianoj/resnet_{}.pt'.format(ep+1))
+                best_preds = copy(all_preds) # for confusion matrix
+                best_reals = copy(all_reals) #
+                #torch.save(best_model, '/tmp/vivianoj/resnet_{}.pt'.format(ep+1))
 
         LOGGER.debug('VALID epoch correct: {}/{}'.format(total_correct, n_valid))
         valid_losses.append(valid_loss)
@@ -262,7 +272,9 @@ def pytorch_train_loop(model, transform, optimizer, train, valid):
 
     performance = {'train': {'accuracy': train_accs, 'loss': train_losses},
                    'valid': {'accuracy': valid_accs, 'loss': valid_losses},
-                   'best_epoch': best_epoch
+                   'best_epoch': best_epoch,
+                   'best_preds': best_preds,
+                   'best_reals': best_reals
     }
 
     return(model, performance)
@@ -331,21 +343,7 @@ def resnet(data):
 
     test_predictions = np.array(test_predictions)
 
-    #plt.plot(np.random.uniform(np.arange(100)))
-    #plt.savefig('figures/test.jpg')
-    #plt.close()
-
-    #plt.plot(train_loss)
-    #plt.plot(valid_loss)
-    #plt.savefig('figures/resnet_loss.jpg')
-    #plt.close()
-
-    #plt.plot(train_acc)
-    #plt.plot(valid_acc)
-    #plt.savefig('figures/resnet_acc.jpg')
-    #plt.close()
-
-    return(test_predictions)
+    return(test_predictions, model, performance, optimizer)
 
 
 def k_nn(data):
