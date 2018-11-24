@@ -38,7 +38,9 @@ plot = sns.heatmap(mat, annot=False, linewidths=0.5, cmap='Blues', xticklabels=l
 plot.set_xlabel('Actual class')
 plot.set_ylabel('Predicted class')
 plot.set_title('Confusion Matrix for Resnet')
+
 fig = plot.get_figure()
+fig.tight_layout()
 fig.savefig('figures/resnet_confusionmat.jpg')
 fig.clear()
 fig.clf()
