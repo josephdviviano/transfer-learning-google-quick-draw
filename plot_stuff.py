@@ -7,6 +7,7 @@ plt.title('Training and Validation Loss')
 plt.axvline(performance['best_epoch'])
 plt.savefig('figures/training_loss.jpg')
 plt.close()
+plt.clf()
 
 plt.plot(performance['train']['accuracy'])
 plt.plot(performance['valid']['accuracy'])
@@ -17,6 +18,7 @@ plt.title('Training and Validation Accuracy')
 plt.axvline(performance['best_epoch'])
 plt.savefig('figures/training_accuracy.jpg')
 plt.close()
+plt.clf()
 
 import os, sys
 import numpy as np
@@ -39,7 +41,7 @@ plot.set_title('Confusion Matrix for Resnet')
 fig = plot.get_figure()
 fig.savefig('figures/resnet_confusionmat.jpg')
 fig.clear()
-
+fig.clf()
 
 
 
