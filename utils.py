@@ -86,15 +86,12 @@ def load_data(test_mode=False, valid_pct=0.1, cropping=False):
     X_test = np.vstack(X_test_output)
 
     # make validation set
-    #n_valid = int(np.floor(valid_pct * n_samples))
-    n_valid = 50
-
+    n_valid = int(np.floor(valid_pct * n_samples))
+    
     X_valid = X_train[:n_valid, :]
-    #X_train = X_train[n_valid:, :]
-    X_train = X_train[n_valid:500, :]
+    X_train = X_train[n_valid:, :]
     y_valid = y_train[:n_valid]
-    #y_train = y_train[n_valid:]
-    y_train = y_train[n_valid:500]
+    y_train = y_train[n_valid:]
 
     # data is accessed as data['X']['valid']
     data = {'X': {'train': X_train, 'valid': X_valid, 'test': X_test},
