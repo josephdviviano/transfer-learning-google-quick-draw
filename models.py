@@ -152,7 +152,7 @@ def SVM_nonlinear(data):
     }
 
     # model we will train in our pipeline
-    clf = SVC(gamma=0.001, max_iter=100)
+    clf = SVC(gamma=0.001, max_iter=300)
 
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
@@ -181,7 +181,7 @@ def SVM(data):
     }
 
     # model we will train in our pipeline
-    clf = SVC(kernel='linear', max_iter=100)
+    clf = SVC(kernel='linear', max_iter=1000)
 
     # pipeline runs preprocessing and model during every CV loop
     pipe = Pipeline([
