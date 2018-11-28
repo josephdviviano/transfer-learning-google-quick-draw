@@ -18,15 +18,13 @@ category_map = {}
 
 def main(test_mode=False):
 
-    #log_fname = "logs/train13.log"
-    #if os.path.isfile(log_fname):
-        #os.remove(log_fname)
-    #log_hdl = logging.FileHandler(log_fname)
-    #log_hdl.setFormatter(logging.Formatter('%(message)s'))
-    #LOGGER.addHandler(log_hdl)
+    log_fname = "logs/train13.log"
+    if os.path.isfile(log_fname):
+        os.remove(log_fname)
+    log_hdl = logging.FileHandler(log_fname)
+    log_hdl.setFormatter(logging.Formatter('%(message)s'))
+    LOGGER.addHandler(log_hdl)
 
-    #data = utils.load_data(test_mode=test_mode)
-    #data = utils.load_data_2d(test_mode=test_mode)
     data = utils.load_data(test_mode=test_mode, cropping = True)
 
     # way to map between string labels and int labels
