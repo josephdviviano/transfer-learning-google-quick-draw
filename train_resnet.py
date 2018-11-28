@@ -29,7 +29,7 @@ def main(test_mode=False):
     log_hdl.setFormatter(logging.Formatter('%(message)s'))
     LOGGER.addHandler(log_hdl)
 
-    data = utils.load_data_2d(test_mode=test_mode, valid_pct=0.2, cropping=False)
+    data = utils.load_data_2d(test_mode=test_mode, valid_pct=0.1, cropping=False)
 
     # way to map between string labels and int labels
     y_map = utils.get_y_map(data)
