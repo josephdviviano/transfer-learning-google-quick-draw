@@ -227,3 +227,69 @@ def logistic_regression(data):
     return(model)
 
 
+def gbm(data):
+    LOGGER.debug('building gradient boosting machine model')
+    # hyperparameters to search for randomized cross validation
+    settings = {
+            'dim__n_components': stats.randint(10, 1000),
+            "clf__loss":["deviance"],
+            "clf__learning_rate":[0.01], #np.linspace(0.001, 0.15, 20),
+            "clf__n_estimators":[1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+            "clf__subsample":[0.5, 0.618, 0.8, 0.85, 0.9, 0.95, 1.0],
+            "clf__criterion": ["friedman_mse",  "mae"],
+            "clf__min_samples_split": np.linspace(0.1, 1.0, 12),
+            "clf__min_samples_leaf": [1,2,3,4,5,6,7,8,9,10],
+            "clf__max_depth":[1,2,3,4,5,6,7,8,9,10],
+            "clf__max_features":["log2","sqrt"]
+    }
+
+    # model we will train in our pipeline
+    clf = ensemble.GradientBoostingClassifier()
+    
+    # pipeline runs preprocessing and model during every CV loop
+    pipe = Pipeline([
+        ('pre', StandardScaler()),
+        ('dim', PCA(svd_solver='randomized')),
+        ('clf', clf)
+    ])
+
+    # this will learn our best parameters for the final model
+    model = RandomizedSearchCV(pipe, settings, n_jobs=10, verbose=VERB_LEVEL,
+        n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
+    )
+    
+    return(model)
+
+
+def xgb(data):
+    LOGGER.debug('building X gradient boosting model')
+    # hyperparameters to search for randomized cross validation
+    settings = {
+            'dim__n_components': stats.randint(10, 1000),
+            "clf__max_depth":[1,2,3,4,5,6,7,8,9,10]	,
+            "clf__learning_rate":[0.01,0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56] ,
+            "clf__n_estimators":[1, 2, 4, 8, 10, 16, 50, 100],
+            "clf__objective":'multi:softmax',
+            'clf__n_jobs':[1],
+            "clf__min_child_weight": np.linspace(0.1, 1.0, 12),
+            "clf__subsample":[0.5, 0.618, 0.8, 0.85, 0.9, 0.95, 1.0],
+            "clf__silent": [True]            
+    }
+
+    # model we will train in our pipeline
+    clf = XGBClassifier()
+    
+    # pipeline runs preprocessing and model during every CV loop
+    pipe = Pipeline([
+        ('pre', StandardScaler()),
+        ('dim', PCA(svd_solver='randomized')),
+        ('clf', clf)
+    ])
+
+    # this will learn our best parameters for the final model
+    model = RandomizedSearchCV(pipe, settings, n_jobs=5, verbose=VERB_LEVEL,
+        n_iter=SETTINGS['n_cv'], cv=SETTINGS['n_inner'], scoring='accuracy'
+    )
+    
+    return(model)
+
