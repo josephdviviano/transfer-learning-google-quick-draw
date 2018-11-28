@@ -10,10 +10,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from sklearn import ensemble
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
+from xgboost import XGBClassifier
+import numpy as np
 import argparse
 import cv2
 import imutils
