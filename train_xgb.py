@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(os.path.basename(__file__))
 
 category_map = {}
 
-def main(test_mode=True):
+def main(test_mode=False):
 
     log_fname = "logs/train13.log"
     if os.path.isfile(log_fname):
