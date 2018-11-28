@@ -43,15 +43,6 @@ def main(test_mode=False):
 
     import IPython; IPython.embed()
 
-    #data = utils.load_data(test_mode=test_mode)
-    #lr_pred, lr_model = exp.lr_baseline(data)
-    #lr_y_test = utils.convert_y(lr_pred['test'], y_map)
-    #utils.write_results('results/lr_baseline.csv', lr_y_test)
-
-    #svm_pred, svm_model = exp.svm_baseline(data)
-    #svm_y_test = utils.convert_y(svm_pred['test'], y_map)
-    #utils.write_results('results/svm_baseline.csv', svm_y_test)
-
 
 
 if __name__ == "__main__":
