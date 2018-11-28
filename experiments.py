@@ -379,4 +379,19 @@ def svm_baseline(data):
 
     return(results, best_model)
 
+def gbm_baseline(data):
+    """baseline: GBM"""
 
+    model = models.gbm(data) # returns a model ready to train
+    results, best_model = kfold_train_loop(data, model)
+
+    return(results, best_model)
+
+
+def xgb_baseline(data):
+    """baseline: XGB"""
+
+    model = models.xgb(data) # returns a model ready to train
+    results, best_model = kfold_train_loop(data, model)
+
+    return(results, best_model)
